@@ -7,7 +7,8 @@ import platform
 import subprocess
 import locale
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+gi.require_version("XApp", "1.0")
+from gi.repository import Gtk, XApp
 
 NORUN_FLAG = os.path.expanduser("~/.linuxmint/mintwelcome/norun.flag")
 
@@ -16,20 +17,6 @@ gettext.install("mintwelcome", "/usr/share/linuxmint/locale")
 from locale import gettext as _
 locale.bindtextdomain("mintwelcome", "/usr/share/linuxmint/locale")
 locale.textdomain("mintwelcome")
-
-class SidebarRow(Gtk.ListBoxRow):
-
-    def __init__(self, page_widget, page_name, icon_name):
-        Gtk.ListBoxRow.__init__(self)
-        self.page_widget = page_widget
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        box.set_border_width(6)
-        image = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.BUTTON)
-        box.pack_start(image, False, False, 0)
-        label = Gtk.Label()
-        label.set_text(page_name)
-        box.pack_start(label, False, False, 0)
-        self.add(box)
 
 class MintWelcome():
 
@@ -63,12 +50,6 @@ class MintWelcome():
         # Setup the labels in the Mint badge
         builder.get_object("label_version").set_text("%s %s" % (dist_name, release))
         builder.get_object("label_edition").set_text("%s %s" % (edition, architecture))
-
-        # Setup the main stack
-        self.stack = Gtk.Stack()
-        builder.get_object("center_box").pack_start(self.stack, True, True, 0)
-        self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        self.stack.set_transition_duration(150)
 
         # Action buttons
         builder.get_object("button_forums").connect("clicked", self.visit, "https://forums.linuxmint.com")
@@ -112,32 +93,6 @@ class MintWelcome():
         if dist_name == "LMDE":
             builder.get_object("box_documentation").remove(builder.get_object("box_new_features"))
 
-        # Construct the stack switcher
-        list_box = builder.get_object("list_navigation")
-
-        page = builder.get_object("page_home")
-        self.stack.add_named(page, "page_home")
-        list_box.add(SidebarRow(page, _("Welcome"), "go-home-symbolic"))
-        self.stack.set_visible_child(page)
-
-        page = builder.get_object("page_first_steps")
-        self.stack.add_named(page, "page_first_steps")
-        list_box.add(SidebarRow(page, _("First Steps"), "dialog-information-symbolic"))
-
-        page = builder.get_object("page_documentation")
-        self.stack.add_named(page, "page_documentation")
-        list_box.add(SidebarRow(page, _("Documentation"), "accessories-dictionary-symbolic"))
-
-        page = builder.get_object("page_help")
-        self.stack.add_named(page, "page_help")
-        list_box.add(SidebarRow(page, _("Help"), "help-browser-symbolic"))
-
-        page = builder.get_object("page_contribute")
-        self.stack.add_named(page, "page_contribute")
-        list_box.add(SidebarRow(page, _("Contribute"), "starred-symbolic"))
-
-        list_box.connect("row-activated", self.sidebar_row_selected_cb)
-
         # Construct the bottom toolbar
         box = builder.get_object("toolbar_bottom")
         checkbox = Gtk.CheckButton()
@@ -149,9 +104,6 @@ class MintWelcome():
 
         window.set_default_size(800, 500)
         window.show_all()
-
-    def sidebar_row_selected_cb(self, list_box, row):
-        self.stack.set_visible_child(row.page_widget)
 
     def on_button_toggled(self, button):
         if button.get_active():
